@@ -3,5 +3,5 @@ Sample command lines:
 ./mcpat -infile mcpat.xml -print_level 5 -opt_for_clk 1 > mcpat.out
 
 Notes:
-- sudo apt-get install python-yaml
+- sudo apt-get install gcc-mutlilib g++-multilib python-yaml
 - Some performance stats are not recorded for my current MARSS version but they have minnor impact on the final mcpat results. This could be solved by updating MARSS. 
