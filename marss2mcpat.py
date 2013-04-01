@@ -63,6 +63,15 @@ class XMLWriter:
   def findComponent(self, root, name):
     return self.findElemWithAttr(root, "component", "id", name)
 
+  def updateParam(self, root, paramName, value):
+    paramElem = self.findElemWithAttr(root, "param", "name", paramName)
+
+    if paramElem != None:
+      paramElem.set("value", str(value))
+    else:
+      attributes = { "name" : str(paramName), "value" : str(value) }
+      paramElem = ET.SubElement(root, "param", attributes)
+
   def updateStat(self, root, statName, value):
     statElem = self.findElemWithAttr(root, "stat", "name", statName)
 
@@ -73,7 +82,7 @@ class XMLWriter:
       attributes = { "name" : str(statName), "value" : str(value) }
       statElem = ET.SubElement(root, "stat", attributes)
 
-  def writeXML(self, statsDict, xml_in, out_filename):
+  def writeXML(self, statsDict, xml_in, out_filename, num_core):
     """ Given input xml configuration and a stats dictionary, write out XML
       suitable for mcpat input (well, hopefully) """
     # Copy the input XML to the output file so we don't clobber it
@@ -123,10 +132,12 @@ class XMLWriter:
       print warn + "!!!! WARNING: Cores are homogenous! Per-core cycles are \
 IGNORED!" + normal
 
-    numCoreElem = self.findParam(system, "number_of_cores")
-    if numCoreElem == None:
-      configError("Number of cores not defined")
-    numCores = numCoreElem.get("value")
+    # numCoreElem = self.findParam(system, "number_of_cores")
+    # if numCoreElem == None:
+    #   configError("Number of cores not defined")
+    # numCores = numCoreElem.get("value")
+    numCores = num_core
+    self.updateParam(system, "number_of_cores", numCores)
     print "Number of cores: " + numCores
 
     numL2Elem = self.findParam(system, "number_of_L2s")
@@ -444,6 +455,8 @@ def processOptions():
   input_group.add_argument('--cpu_mode', required=True, metavar='MODE',
       help='Mode for stats {user, kernel, total}',
       choices=['user', 'kernel', 'total'])
+  input_group.add_argument('--num_core', required=True, metavar='NCORE',
+                           help='Number of cores')
 
   output_group = argparser.add_argument_group('Output')
   output_group.add_argument('-o', default='mcpat.xml', metavar='FILE',
@@ -456,5 +469,5 @@ if __name__ == "__main__":
   args = processOptions()
   statsDict = ReadFile(args.marss, args.cpu_mode)
   w = XMLWriter();
-  w.writeXML(statsDict, args.xml_in, args.o)
+  w.writeXML(statsDict, args.xml_in, args.o, args.num_core)
   print "Done."
