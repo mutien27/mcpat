@@ -82,7 +82,7 @@ class XMLWriter:
       attributes = { "name" : str(statName), "value" : str(value) }
       statElem = ET.SubElement(root, "stat", attributes)
 
-  def writeXML(self, statsDict, xml_in, out_filename, num_core):
+  def writeXML(self, statsDict, xml_in, out_filename, num_core, freq, machine):
     """ Given input xml configuration and a stats dictionary, write out XML
       suitable for mcpat input (well, hopefully) """
     # Copy the input XML to the output file so we don't clobber it
@@ -139,6 +139,12 @@ IGNORED!" + normal
     numCores = num_core
     self.updateParam(system, "number_of_cores", numCores)
     print "Number of cores: " + numCores
+
+    core0 = self.findComponent(system, "system.core0")
+
+    self.updateParam(core0, "clock_rate", freq)
+
+    self.updateParam(core0, "machine_type", machine)
 
     numL2Elem = self.findParam(system, "number_of_L2s")
     if numL2Elem == None:
@@ -457,6 +463,12 @@ def processOptions():
       choices=['user', 'kernel', 'total'])
   input_group.add_argument('--num_core', required=True, metavar='NCORE',
                            help='Number of cores')
+  input_group.add_argument('--freq', required=True, metavar='FREQ',
+                           help='Clock rate',
+                           choices=['1000', '2000', '3333', '4000'])
+  input_group.add_argument('--machine', required=True, metavar='TYPE',
+                           help='Machine type (ooo 0; inorder 1)',
+                           choices=['0', '1'])
 
   output_group = argparser.add_argument_group('Output')
   output_group.add_argument('-o', default='mcpat.xml', metavar='FILE',
@@ -469,5 +481,5 @@ if __name__ == "__main__":
   args = processOptions()
   statsDict = ReadFile(args.marss, args.cpu_mode)
   w = XMLWriter();
-  w.writeXML(statsDict, args.xml_in, args.o, args.num_core)
+  w.writeXML(statsDict, args.xml_in, args.o, args.num_core, args.freq, args.machine)
   print "Done."
