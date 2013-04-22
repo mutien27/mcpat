@@ -2,7 +2,7 @@
 <component id="root" name="root">
 	<component id="system" name="system">
 		<!--McPAT will skip the components if number is set to 0 -->
-		<param name="number_of_cores" value="8"/>
+		<param name="number_of_cores" value="2"/>
 		<param name="number_of_L1Directories" value="0"/>
 		<param name="number_of_L2Directories" value="0"/>
 		<param name="number_of_L2s" value="1"/> <!-- This number means how many L2 clusters in each cluster there can be multiple banks/ports -->
@@ -18,10 +18,10 @@
 		<param name="homogeneous_NoCs" value="1"/>
 		<param name="core_tech_node" value="32"/><!-- nm -->
 		<param name="target_core_clockrate" value="2000"/><!--MHz -->
-		<param name="temperature" value="350"/> <!-- Kelvin -->
+		<param name="temperature" value="380"/> <!-- Kelvin -->
 		<param name="number_cache_levels" value="3"/>
 		<param name="interconnect_projection_type" value="0"/><!--0: agressive wire technology; 1: conservative wire technology -->
-		<param name="device_type" value="0"/><!--0: HP(High Performance Type); 1: LSTP(Low standby power) 2: LOP (Low Operating Power)  -->
+		<param name="device_type" value="1"/><!--0: HP(High Performance Type); 1: LSTP(Low standby power) 2: LOP (Low Operating Power)  -->
 		<param name="longer_channel_device" value="1"/><!-- 0 no use; 1 use when approperiate -->
 		<param name="machine_bits" value="64"/>
 		<param name="virtual_address_width" value="64"/>
@@ -133,8 +133,8 @@
 			<!-- the following cycle stats are used for heterogeneouse cores only, 
 				please ignore them if homogeneouse cores -->
 			<stat name="total_cycles" value="100000"/>
-			<stat name="idle_cycles" value="0"/>
-			<stat name="busy_cycles"  value="100000"/>
+		    <stat name="idle_cycles" value="0"/>
+		    <stat name="busy_cycles"  value="100000"/>
 			<!-- instruction buffer stats -->
 			<!-- ROB stats, both RS and Phy based OoOs have ROB
 			performance simulator should capture the difference on accesses,
@@ -219,7 +219,7 @@
 			<component id="system.core0.icache" name="icache">
 				<!-- there is no write requests to itlb although writes happen to it after miss, 
 				which is actually a replacement -->
-				<param name="icache_config" value="32768,64,8,1,1,2,512,1"/>
+				<param name="icache_config" value="32768,64,8,1,1,2,32,1"/>
 				<!-- the parameters are capacity,block_width, associativity, bank, throughput w.r.t. core clock, latency w.r.t. core clock,output_width, cache policy,  -->
 				<!-- cache_policy;//0 no write or write-though with non-write allocate;1 write-back with write-allocate -->
 				<param name="buffer_sizes" value="16, 16, 16,0"/>
@@ -236,7 +236,7 @@
 			</component>
 			<component id="system.core0.dcache" name="dcache">
 			        <!-- all the buffer related are optional -->
-				<param name="dcache_config" value="32768,64,8,1,1,2,512,1"/>
+				<param name="dcache_config" value="32768,64,8,1,1,2,32,1"/>
 				<param name="buffer_sizes" value="16, 16, 16, 16"/>
 				<!-- cache controller buffer sizes: miss_buffer_size(MSHR),fill_buffer_size,prefetch_buffer_size,wb_buffer_size-->	
 				<stat name="read_accesses" value="800000"/>
@@ -248,7 +248,7 @@
 			<param name="number_of_BTB" value="2"/>
 			<component id="system.core0.BTB" name="BTB">
 			        <!-- all the buffer related are optional -->
-				<param name="BTB_config" value="5120,4,2,1,1,3"/> <!--should be 4096 + 1024 -->
+				<param name="BTB_config" value="5120,4,2,1, 1,3"/> <!--should be 4096 + 1024 -->
 				<!-- the parameters are capacity,block_width,associativity,bank, throughput w.r.t. core clock, latency w.r.t. core clock,-->
 				<stat name="read_accesses" value="400000"/> <!--See IFU code for guideline -->
 				<stat name="write_accesses" value="0"/>
@@ -256,12 +256,12 @@
 	</component>
 		<component id="system.L1Directory0" name="L1Directory0">
 				<param name="Directory_type" value="0"/>
-				<!--0 cam based shadowed tag. 1 directory cache -->	
+			    <!--0 cam based shadowed tag. 1 directory cache -->	
 				<param name="Dir_config" value="4096,2,0,1,100,100, 8"/>
 				<!-- the parameters are capacity,block_width, associativity,bank, throughput w.r.t. core clock, latency w.r.t. core clock,-->
-				<param name="buffer_sizes" value="8, 8, 8, 8"/>	
+			    <param name="buffer_sizes" value="8, 8, 8, 8"/>	
 				<!-- all the buffer related are optional -->
-				<param name="clockrate" value="2000"/>
+			    <param name="clockrate" value="2000"/>
 				<param name="ports" value="1,1,1"/>
 				<!-- number of r, w, and rw search ports -->
 				<param name="device_type" value="0"/>
@@ -276,12 +276,12 @@
 		</component>
 		<component id="system.L2Directory0" name="L2Directory0">
 				<param name="Directory_type" value="1"/>
-				<!--0 cam based shadowed tag. 1 directory cache -->	
+			    <!--0 cam based shadowed tag. 1 directory cache -->	
 				<param name="Dir_config" value="1048576,16,16,1,2, 100"/>
 				<!-- the parameters are capacity,block_width, associativity,bank, throughput w.r.t. core clock, latency w.r.t. core clock,-->
-				<param name="buffer_sizes" value="8, 8, 8, 8"/>	
+			    <param name="buffer_sizes" value="8, 8, 8, 8"/>	
 				<!-- all the buffer related are optional -->
-				<param name="clockrate" value="3400"/>
+			    <param name="clockrate" value="2000"/>
 				<param name="ports" value="1,1,1"/>
 				<!-- number of r, w, and rw search ports -->
 				<param name="device_type" value="0"/>
@@ -296,7 +296,7 @@
 		</component>
 		<component id="system.L20" name="L20">
 			<!-- all the buffer related are optional -->
-				<param name="L2_config" value="262144,64,16,1,1,2,512,1"/> 
+				<param name="L2_config" value="262144,64,8,1,2,2,32,1"/> 
 				<!-- the parameters are capacity,block_width, associativity, bank, throughput w.r.t. core clock, latency w.r.t. core clock,output_width, cache policy -->
 				<param name="buffer_sizes" value="16, 16, 16, 16"/>
 				<!-- cache controller buffer sizes: miss_buffer_size(MSHR),fill_buffer_size,prefetch_buffer_size,wb_buffer_size-->	
@@ -314,9 +314,9 @@
 		
 <!--**********************************************************************-->
 <component id="system.L30" name="L30">
-				<param name="L3_config" value="33554432,64,16,16,2,9,1"/>
+				<param name="L3_config" value="16777216,64,16, 16, 16, 100,1"/>
 				<!-- the parameters are capacity,block_width, associativity,bank, throughput w.r.t. core clock, latency w.r.t. core clock,-->
-				<param name="clockrate" value="2000"/>
+				<param name="clockrate" value="850"/>
 				<param name="ports" value="1,1,1"/>
 				<!-- number of r, w, and rw ports -->
 				<param name="device_type" value="0"/>
