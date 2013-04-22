@@ -142,6 +142,8 @@ IGNORED!" + normal
 
     core0 = self.findComponent(system, "system.core0")
 
+    # FIXME: right now I'm setting 2GHz mananually
+    self.updateParam(system, "target_core_clockrate", freq)
     self.updateParam(core0, "clock_rate", freq)
 
     self.updateParam(core0, "machine_type", machine)
@@ -179,8 +181,12 @@ IGNORED!" + normal
 
     # Then insert or edit the required stats for McPAT
     print "Updating cycle counts..."
-    cycles = statsDict["base_machine"]["ooo_0_0"]["cycles"]
-    idle = statsDict["base_machine"]["ooo_0_0"]["thread0"]["cycles_in_pause"]
+    if machine == '0':
+        cycles = statsDict["base_machine"]["ooo_0_0"]["cycles"]
+        idle = statsDict["base_machine"]["ooo_0_0"]["thread0"]["cycles_in_pause"]
+    else:
+        cycles = statsDict["base_machine"]["atom_0"]["thread_0"]["cycles"]
+        idle = 0 # set to 0 because MARSS doesn't track this for ATOM
     self.updateStat(system, "total_cycles", cycles)
     self.updateStat(system, "idle_cycles", idle)
     self.updateStat(system, "busy_cycles", cycles - idle)
@@ -196,96 +202,121 @@ IGNORED!" + normal
 duplicates!" + normal
         break
 
-      oooDict = statsDict["base_machine"]["ooo_%d_%d" % (i,i)]
-      tDict = oooDict["thread0"]
+      if machine == '0':
+          oooDict = statsDict["base_machine"]["ooo_%d_%d" % (i,i)]
+          tDict = oooDict["thread0"]
+      else:
+          atomDict = statsDict["base_machine"]["atom_%d" % i]
+          tDict = atomDict["thread_0"]
 
       print "\tUpdating core statistics..."
       # Dispatched instructions
-      # insn_src = oooDict["dispatch"]["opclass"]
-      # total_insns = sum(insn_src.itervalues())
-      # self.updateStat(ith_core, "total_instructions", total_insns)
+      if machine == '0':
+          insn_src = oooDict["dispatch"]["opclass"]
+          total_insns = sum(insn_src.itervalues())
+          self.updateStat(ith_core, "total_instructions", total_insns)
 
-      # ld_insn = insn_src["ld"] + insn_src["ld.pre"]
-      # br_insn = insn_src["bru"] + insn_src["br.cc"] + insn_src["jmp"]
-      # fp_insn = 0
-      # for key in ['fpu', 'fp-div-sqrt', 'fp-cmp', 'fp-perm', 'fp-cvt-i2f',
-      #             'fp-cvt-f2i', 'fp-cvt-f2f']:
-      #   fp_insn += insn_src[key]
-      # int_insn = sum(insn_src.itervalues()) - ld_insn - br_insn - fp_insn
-      # self.updateStat(ith_core, "int_instructions", int_insn)
-      # self.updateStat(ith_core, "fp_instructions", fp_insn)
-      # self.updateStat(ith_core, "branch_instructions", br_insn)
-      # self.updateStat(ith_core, "load_instructions", ld_insn)
-      # self.updateStat(ith_core, "store_instructions", insn_src["st"])
+          ld_insn = insn_src["ld"] + insn_src["ld.pre"]
+          br_insn = insn_src["bru"] + insn_src["br.cc"] + insn_src["jmp"]
+          fp_insn = 0
+          for key in ['fpu', 'fp-div-sqrt', 'fp-cmp', 'fp-perm', 'fp-cvt-i2f',
+                      'fp-cvt-f2i', 'fp-cvt-f2f']:
+            fp_insn += insn_src[key]
+          int_insn = sum(insn_src.itervalues()) - ld_insn - br_insn - fp_insn
+          self.updateStat(ith_core, "int_instructions", int_insn)
+          self.updateStat(ith_core, "fp_instructions", fp_insn)
+          self.updateStat(ith_core, "branch_instructions", br_insn)
+          self.updateStat(ith_core, "load_instructions", ld_insn)
+          self.updateStat(ith_core, "store_instructions", insn_src["st"])
 
-      # mispred = tDict["branchpred"]["summary"]["mispred"]
-      # self.updateStat(ith_core, "branch_mispredictions", mispred)
+          mispred = tDict["branchpred"]["summary"]["mispred"]
+          self.updateStat(ith_core, "branch_mispredictions", mispred)
 
       # Committed instructions
-      cinsn_src = tDict["commit"]["opclass"]
-      cld_insn = cinsn_src["ld"] + cinsn_src["ld.pre"]
-      cbr_insn = cinsn_src["bru"] + cinsn_src["br.cc"] + cinsn_src["jmp"]
-      cfp_insn = 0
-      for key in ['fpu', 'fp-div-sqrt', 'fp-cmp', 'fp-perm', 'fp-cvt-i2f',
-                  'fp-cvt-f2i', 'fp-cvt-f2f']:
-        cfp_insn += cinsn_src[key]
-      cint_insn = sum(cinsn_src.itervalues()) - cld_insn - cbr_insn - cfp_insn
-      self.updateStat(ith_core, "committed_instructions",
-          sum(cinsn_src.itervalues()))
-      self.updateStat(ith_core, "committed_int_instructions", cint_insn)
-      self.updateStat(ith_core, "committed_fp_instructions", cfp_insn)
-      self.updateStat(ith_core, "pipeline_duty_cycle", "0.9") #TODO?
+      if machine == '0':
+          cinsn_src = tDict["commit"]["opclass"]
+          cld_insn = cinsn_src["ld"] + cinsn_src["ld.pre"]
+          cbr_insn = cinsn_src["bru"] + cinsn_src["br.cc"] + cinsn_src["jmp"]
+          cfp_insn = 0
+          for key in ['fpu', 'fp-div-sqrt', 'fp-cmp', 'fp-perm', 'fp-cvt-i2f',
+                      'fp-cvt-f2i', 'fp-cvt-f2f']:
+            cfp_insn += cinsn_src[key]
+          cint_insn = sum(cinsn_src.itervalues()) - cld_insn - cbr_insn - cfp_insn
+          self.updateStat(ith_core, "committed_instructions",
+              sum(cinsn_src.itervalues()))
+          self.updateStat(ith_core, "committed_int_instructions", cint_insn)
+          self.updateStat(ith_core, "committed_fp_instructions", cfp_insn)
+          self.updateStat(ith_core, "pipeline_duty_cycle", "0.9") #TODO?
+      else:
+          cinsn_src = tDict["commit"]["insns"]
+          cint_insn = int(cinsn_src) * 0.25 # MARSS doesn't record this for ATOM
+          cfp_insn = int(cinsn_src) * 0.25  # so this is just some random assumption
+          self.updateStat(ith_core, "committed_instructions", cinsn_src)
+          self.updateStat(ith_core, "committed_int_instructions", cint_insn)
+          self.updateStat(ith_core, "committed_fp_instructions", cfp_insn)
+          self.updateStat(ith_core, "pipeline_duty_cycle", "0.9") #TODO?
 
       # Cycles
-      cycles = oooDict["cycles"]
-      idle = tDict["cycles_in_pause"]
-      self.updateStat(ith_core, "total_cycles", cycles)
-      self.updateStat(ith_core, "idle_cycles", idle)
-      self.updateStat(ith_core, "busy_cycles", cycles - idle)
+      if machine == '0':
+          cycles = oooDict["cycles"]
+          idle = tDict["cycles_in_pause"]
+          self.updateStat(ith_core, "total_cycles", cycles)
+          self.updateStat(ith_core, "idle_cycles", idle)
+          self.updateStat(ith_core, "busy_cycles", cycles - idle)
+      else:
+          cycles = atomDict["thread_0"]["cycles"]
+          idle = 0 # 0 for ATOM
+          self.updateStat(ith_core, "total_cycles", cycles)
+          self.updateStat(ith_core, "idle_cycles", idle)
+          self.updateStat(ith_core, "busy_cycles", cycles - idle)
 
       # ROB
-      # rob_reads = tDict["rob_reads"]
-      # rob_writes = tDict["rob_writes"]
-      # self.updateStat(ith_core, "ROB_reads", rob_reads)
-      # self.updateStat(ith_core, "ROB_writes", rob_writes)
+      if machine == '0':
+          rob_reads = tDict["rob_reads"]
+          rob_writes = tDict["rob_writes"]
+          self.updateStat(ith_core, "ROB_reads", rob_reads)
+          self.updateStat(ith_core, "ROB_writes", rob_writes)
 
       # Rename tables
-      # rename_reads = tDict["rename_table_reads"]
-      # rename_writes = tDict["rename_table_writes"]
-      # self.updateStat(ith_core, "rename_reads", rename_reads/2)
-      # self.updateStat(ith_core, "rename_writes", rename_writes/2)
-      # # NOTE: Unified counters for rename tables, so we (maybe unwisely)
-      # # just split them
-      # self.updateStat(ith_core, "fp_rename_reads", rename_reads/2)
-      # self.updateStat(ith_core, "fp_rename_writes", rename_writes/2)
+      if machine == '0':
+          rename_reads = tDict["rename_table_reads"]
+          rename_writes = tDict["rename_table_writes"]
+          self.updateStat(ith_core, "rename_reads", rename_reads/2)
+          self.updateStat(ith_core, "rename_writes", rename_writes/2)
+          # NOTE: Unified counters for rename tables, so we (maybe unwisely)
+          # just split them
+          self.updateStat(ith_core, "fp_rename_reads", rename_reads/2)
+          self.updateStat(ith_core, "fp_rename_writes", rename_writes/2)
 
       # Issue queue
-      # iq_reads = oooDict["iq_reads"]
-      # iq_writes = oooDict["iq_writes"]
-      # iq_fp_reads = oooDict["iq_fp_reads"]
-      # iq_fp_writes = oooDict["iq_fp_writes"]
-      # self.updateStat(ith_core, "inst_window_reads", iq_reads)
-      # self.updateStat(ith_core, "inst_window_writes", iq_writes)
-      # self.updateStat(ith_core, "inst_window_wakeup_accesses",
-      #     iq_reads + iq_writes)
-      # self.updateStat(ith_core, "fp_inst_window_reads", iq_fp_reads)
-      # self.updateStat(ith_core, "fp_inst_window_writes", iq_fp_writes)
-      # self.updateStat(ith_core, "fp_inst_window_wakeup_accesses",
-      #     iq_fp_reads + iq_fp_writes)
+      if machine == '0':
+          iq_reads = oooDict["iq_reads"]
+          iq_writes = oooDict["iq_writes"]
+          iq_fp_reads = oooDict["iq_fp_reads"]
+          iq_fp_writes = oooDict["iq_fp_writes"]
+          self.updateStat(ith_core, "inst_window_reads", iq_reads)
+          self.updateStat(ith_core, "inst_window_writes", iq_writes)
+          self.updateStat(ith_core, "inst_window_wakeup_accesses",
+              iq_reads + iq_writes)
+          self.updateStat(ith_core, "fp_inst_window_reads", iq_fp_reads)
+          self.updateStat(ith_core, "fp_inst_window_writes", iq_fp_writes)
+          self.updateStat(ith_core, "fp_inst_window_wakeup_accesses",
+              iq_fp_reads + iq_fp_writes)
 
       # Regfile reads/writes
-      # self.updateStat(ith_core, "int_regfile_reads", tDict["reg_reads"])
-      # self.updateStat(ith_core, "float_regfile_reads", tDict["fp_reg_reads"])
-      # self.updateStat(ith_core, "int_regfile_writes", tDict["reg_writes"])
-      # self.updateStat(ith_core, "float_regfile_writes", tDict["fp_reg_writes"])
-      # self.updateStat(ith_core, "context_switches", tDict["ctx_switches"])
-      # self.updateStat(ith_core, "function_calls", "") # TODO?
-      # self.updateStat(ith_core, "ialu_accesses", "300000")
-      # self.updateStat(ith_core, "fpu_accesses", "100000")
-      # self.updateStat(ith_core, "mul_accesses", "200000")
-      # self.updateStat(ith_core, "cdb_alu_accesses", "300000")
-      # self.updateStat(ith_core, "cdb_mul_accesses", "200000")
-      # self.updateStat(ith_core, "cdb_fpu_accesses", "100000")
+      if machine == '0':
+          self.updateStat(ith_core, "int_regfile_reads", tDict["reg_reads"])
+          self.updateStat(ith_core, "float_regfile_reads", tDict["fp_reg_reads"])
+          self.updateStat(ith_core, "int_regfile_writes", tDict["reg_writes"])
+          self.updateStat(ith_core, "float_regfile_writes", tDict["fp_reg_writes"])
+          self.updateStat(ith_core, "context_switches", tDict["ctx_switches"])
+          self.updateStat(ith_core, "function_calls", "") # TODO?
+          self.updateStat(ith_core, "ialu_accesses", "300000")
+          self.updateStat(ith_core, "fpu_accesses", "100000")
+          self.updateStat(ith_core, "mul_accesses", "200000")
+          self.updateStat(ith_core, "cdb_alu_accesses", "300000")
+          self.updateStat(ith_core, "cdb_mul_accesses", "200000")
+          self.updateStat(ith_core, "cdb_fpu_accesses", "100000")
 
       # XXX: McPAT's XML chastises me to not change these, so for now I don't.
       self.updateStat(ith_core, "IFU_duty_cycle", "1")
@@ -300,18 +331,20 @@ duplicates!" + normal
       self.updateStat(ith_core, "FPU_cdb_duty_cycle", "0.3")
 
       print "\tUpdating branch predictor statistics..."
-      ith_btb = self.findComponent(ith_core, "system.core%d.predictor" % i)
-      self.updateStat(ith_btb, "predictor_accesses",
-          tDict["branchpred"]["predictions"])
+      if machine == '0':
+          ith_btb = self.findComponent(ith_core, "system.core%d.predictor" % i)
+          self.updateStat(ith_btb, "predictor_accesses",
+                          tDict["branchpred"]["predictions"])
 
       print "\tUpdating ITLB statistics..."
-      ith_itlb = self.findComponent(ith_core, "system.core%d.itlb" % i)
-      itlbDict = tDict["dcache"]["itlb"]
-      hits = itlbDict["hits"]
-      misses = itlbDict["misses"]
-      self.updateStat(ith_itlb, "total_accesses", hits + misses)
-      self.updateStat(ith_itlb, "total_misses", hits)
-      self.updateStat(ith_itlb, "conflicts", misses)
+      if machine == '0':
+          ith_itlb = self.findComponent(ith_core, "system.core%d.itlb" % i)
+          itlbDict = tDict["dcache"]["itlb"]
+          hits = itlbDict["hits"]
+          misses = itlbDict["misses"]
+          self.updateStat(ith_itlb, "total_accesses", hits + misses)
+          self.updateStat(ith_itlb, "total_misses", hits)
+          self.updateStat(ith_itlb, "conflicts", misses)
 
       print "\tUpdating Icache statistics..."
       ith_icache = self.findComponent(ith_core, "system.core%d.icache" % i)
@@ -325,13 +358,14 @@ duplicates!" + normal
       self.updateStat(ith_icache, "conflicts", cnf)
 
       print "\tUpdating DTLB statistics..."
-      ith_dtlb = self.findComponent(ith_core, "system.core%d.dtlb" % i)
-      dtlbDict = tDict["dcache"]["dtlb"]
-      hits = dtlbDict["hits"]
-      misses = dtlbDict["misses"]
-      self.updateStat(ith_dtlb, "total_accesses", hits + misses)
-      self.updateStat(ith_dtlb, "total_misses", hits)
-      self.updateStat(ith_dtlb, "conflicts", misses)
+      if machine == '0':
+          ith_dtlb = self.findComponent(ith_core, "system.core%d.dtlb" % i)
+          dtlbDict = tDict["dcache"]["dtlb"]
+          hits = dtlbDict["hits"]
+          misses = dtlbDict["misses"]
+          self.updateStat(ith_dtlb, "total_accesses", hits + misses)
+          self.updateStat(ith_dtlb, "total_misses", hits)
+          self.updateStat(ith_dtlb, "conflicts", misses)
 
       print "\tUpdating Dcache statistics..."
       ith_dcache = self.findComponent(ith_core, "system.core%d.dcache" % i)
