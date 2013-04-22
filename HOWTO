@@ -1,5 +1,5 @@
 Sample command lines:
-./marss2mcpat.py --marss cg.stats --xml_in myxml.xml --cpu_mode total --num_core 8
+./marss2mcpat.py --marss cg.stats --xml_in myxml.xml --cpu_mode total --num_core 8 --freq 2000 --machine 0
 ./mcpat -infile mcpat.xml -print_level 5 -opt_for_clk 1 > mcpat.out
 
 Notes:
